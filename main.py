@@ -69,8 +69,6 @@ def execute_move(board: list, player: int, pit_index: int):
     else:
         next_player = player
 
-    game_over = False
-    winner = None
     if sum(board[0:6]) == 0 or sum(board[7:13]) == 0:
         board[6] += sum(board[0:6])
         board[13] += sum(board[7:13])
@@ -165,14 +163,14 @@ def get_gui():
                 else { alert((await res.json()).detail); }
             }
             function render() {
-                document.getElementById('store1').innerText = state.board[6];
-                document.getElementById('store2').innerText = state.board[13];
+                document.getElementById('store1').innerText = state.board.at(6);
+                document.getElementById('store2').innerText = state.board.at(13);
                 let r1 = "", r2 = "";
                 for(let i=0; i<6; i++) {
-                    r1 += '<div class="pit" onclick="move(' + i + ')">' + state.board[i] + '</div>';
+                    r1 += '<div class="pit" onclick="move(' + i + ')">' + state.board.at(i) + '</div>';
                 }
                 for(let i=12; i>=7; i--) {
-                    r2 += '<div class="pit">' + state.board[i] + '</div>';
+                    r2 += '<div class="pit">' + state.board.at(i) + '</div>';
                 }
                 document.getElementById('row1').innerHTML = r1;
                 document.getElementById('row2').innerHTML = r2;
