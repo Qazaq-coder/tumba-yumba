@@ -12,6 +12,7 @@ class GameState(BaseModel):
     winner: int = None
 
 def init_board():
+    # Стартовая расстановка турецкой Мангалы: 6 лунок игрока по 4, казна (0), 6 лунок ИИ по 4, казна (0)
     return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]
 
 @app.get("/new_game", response_model=GameState)
@@ -160,7 +161,7 @@ def get_gui():
         function setLanguage(l){currentLang=l;render();}
         async function initGame(){const r=await fetch('/new_game');state=await r.json();moveCount=0;render();}
         async function move(i){
-            if(state.current_player!==1||state.game_over)return;
+            if(state.current_player !== 1 || state.game_over)return;
             const r=await fetch('/make_move?pit_index='+i,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
             if(r.ok){state=await r.json();moveCount++;render();}
         }
