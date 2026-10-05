@@ -12,6 +12,7 @@ class GameState(BaseModel):
     winner: int = None
 
 def init_board():
+    # Жестко возвращаем массив турецкой Мангалы: 12 лунок по 4 камня, казны (индексы 6 и 13) по 0
     return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]
 
 @app.get("/new_game", response_model=GameState)
@@ -118,5 +119,115 @@ def make_move(state: GameState, pit_index: int):
 
 @app.get("/", response_class=HTMLResponse)
 def get_gui():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return f.read()
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Tumba Yumba</title>
+        <link href="https://jsdelivr.net" rel="stylesheet">
+        <style>
+            body { background: #1a1a2e; color: white; text-align: center; font-family: 'Segoe UI', sans-serif; padding-top: 50px; }
+            h1 { font-weight: 700; color: #ff9f43; margin-bottom: 10px; letter-spacing: 2px; }
+            .lang-bar { margin-bottom: 25px; }
+            .lang-btn { margin: 0 5px; padding: 5px 15px; border-radius: 10px; font-weight: 600; }
+            .board { background: #16213e; border: 4px solid #0f3460; border-radius: 25px; padding: 30px; display: inline-block; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+            .pit { width: 80px; height: 80px; background: #0f3460; border: 2px solid #ff9f43; border-radius: 50%; display: inline-block; margin: 15px; line-height: 76px; font-size: 26px; font-weight: bold; cursor: pointer; transition: all 0.2s ease-in-out; color: #fff; }
+            .pit:hover { background: #ff9f43; transform: scale(1.1); box-shadow: 0 0 15px #ff9f43; }
+            .row-pits { display: inline-block; vertical-align: middle; }
+            .store { width: 100px; height: 210px; background: #ee5253; border: 3px solid #ff9f43; border-radius: 30px; display: inline-block; vertical-align: middle; line-height: 200px; font-size: 40px; font-weight: bold; margin: 0 25px; }
+            .active-player { color: #10ac84; font-weight: 600; font-size: 26px; margin-bottom: 25px; min-height: 40px; text-transform: uppercase; }
+            .stats-bar { font-size: 18px; margin-bottom: 20px; color: #c7ecee; font-weight: 500; }
+            .ai-row .pit { border-color: #10ac84; cursor: not-allowed; }
+            .ai-row .pit:hover { background: #0f3460; transform: none; box-shadow: none; }
+        </style>
+    </head>
+    <body>
+        <h1>TUMBA YUMBA 🌴</h1>
+        
+        <div class="lang-bar">
+            <button class="btn btn-outline-light lang-btn" onclick="setLanguage('kk')">ҚАЗ</button>
+            <button class="btn btn-outline-light lang-btn" onclick="setLanguage('ru')">РУС</button>
+            <button class="btn btn-outline-light lang-btn" onclick="setLanguage('en')">ENG</button>
+        </div>
+
+        <div id="stats" class="stats-bar">Ходов сделано: 0</div>
+        <div id="status" class="active-player">Загрузка...</div>
+        
+        <div class="board">
+            <div id="store2" class="store">0</div>
+            <div class="row-pits">
+                <div id="row2" class="ai-row"></div>
+                <div id="row1"></div>
+            </div>
+            <div id="store1" class="store">0</div>
+        </div>
+        <br><button id="new-game-btn" class="btn btn-lg btn-outline-warning mt-5 px-5" onclick="initGame()">Новая игра</button>
+        
+        <script>
+            let state = {};
+            let moveCount = 0;
+            let currentLang = 'ru';
+
+            const translations = {
+                ru: {
+                    loading: "Загрузка...", your_turn: "Ваш ход 🟢", ai_turn: "Ходит Компьютер... 🤖",
+                    win: "🎉 Вы победили!", lose: "🤖 Победил Компьютер!", draw: "🤝 Ничья!",
+                    moves: "Ходов сделано: ", new_game: "Новая игра"
+                },
+                kk: {
+                    loading: "Жүктелуде...", your_turn: "Сіздің жүрісіңіз 🟢", ai_turn: "Компьютер жүріп жатыр... 🤖",
+                    win: "🎉 Сіз жеңдіңіз!", lose: "🤖 Компьютер жеңді!", draw: "🤝 Тең ойын!",
+                    moves: "Жасалған жүрістер: ", new_game: "Жаңа ойын"
+                },
+                en: {
+                    loading: "Loading...", your_turn: "Your turn 🟢", ai_turn: "Computer is thinking... 🤖",
+                    win: "🎉 You won!", lose: "🤖 Computer won!", draw: "🤝 Draw game!",
+                    moves: "Moves made: ", new_game: "New Game"
+                }
+            };
+
+            function setLanguage(lang) {
+                currentLang = lang;
+                render();
+            }
+
+            async function initGame() {
+                const res = await fetch('/new_game');
+                state = await res.json();
+                moveCount = 0;
+                render();
+            }
+
+            async function move(idx) {
+                if (state.current_player !== 1 || state.game_over) return;
+                const res = await fetch('/make_move?pit_index=' + idx, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(state)
+                });
+                if(res.ok) { 
+                    state = await res.json(); 
+                    moveCount++;
+                    render(); 
+                }
+            }
+
+            function render() {
+                if (!state.board) return;
+                const t = translations[currentLang];
+                
+                document.getElementById('stats').innerText = t.moves + moveCount;
+                document.getElementById('new-game-btn').innerText = t.new_game;
+                document.getElementById('store1').innerText = state.board[6];
+                document.getElementById('store2').innerText = state.board[13];
+                
+                let r1 = "", r2 = "";
+                for(let i=0; i<6; i++) {
+                    r1 += '<div class="pit" onclick="move(' + i + ')">' + state.board[i] + '</div>';
+                }
+                for(let i=12; i>=7; i--) {
+                    r2 += '<div class="pit">' + state.board[i] + '</div>';
+                }
+                document.getElementById('row1').innerHTML = r1;
+                document.getElementById('row2').innerHTML = r2;
+                
+                if(state.game_over) {
+                    if (state.winner === 1) document.getElementById('status').innerText = t.win;
