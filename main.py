@@ -12,7 +12,6 @@ class GameState(BaseModel):
     winner: int = None
 
 def init_board():
-    # Жестко возвращаем массив турецкой Мангалы: 12 лунок по 4 камня, казны (индексы 6 и 13) по 0
     return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]
 
 @app.get("/new_game", response_model=GameState)
@@ -119,115 +118,58 @@ def make_move(state: GameState, pit_index: int):
 
 @app.get("/", response_class=HTMLResponse)
 def get_gui():
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Tumba Yumba</title>
-        <link href="https://jsdelivr.net" rel="stylesheet">
-        <style>
-            body { background: #1a1a2e; color: white; text-align: center; font-family: 'Segoe UI', sans-serif; padding-top: 50px; }
-            h1 { font-weight: 700; color: #ff9f43; margin-bottom: 10px; letter-spacing: 2px; }
-            .lang-bar { margin-bottom: 25px; }
-            .lang-btn { margin: 0 5px; padding: 5px 15px; border-radius: 10px; font-weight: 600; }
-            .board { background: #16213e; border: 4px solid #0f3460; border-radius: 25px; padding: 30px; display: inline-block; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
-            .pit { width: 80px; height: 80px; background: #0f3460; border: 2px solid #ff9f43; border-radius: 50%; display: inline-block; margin: 15px; line-height: 76px; font-size: 26px; font-weight: bold; cursor: pointer; transition: all 0.2s ease-in-out; color: #fff; }
-            .pit:hover { background: #ff9f43; transform: scale(1.1); box-shadow: 0 0 15px #ff9f43; }
-            .row-pits { display: inline-block; vertical-align: middle; }
-            .store { width: 100px; height: 210px; background: #ee5253; border: 3px solid #ff9f43; border-radius: 30px; display: inline-block; vertical-align: middle; line-height: 200px; font-size: 40px; font-weight: bold; margin: 0 25px; }
-            .active-player { color: #10ac84; font-weight: 600; font-size: 26px; margin-bottom: 25px; min-height: 40px; text-transform: uppercase; }
-            .stats-bar { font-size: 18px; margin-bottom: 20px; color: #c7ecee; font-weight: 500; }
-            .ai-row .pit { border-color: #10ac84; cursor: not-allowed; }
-            .ai-row .pit:hover { background: #0f3460; transform: none; box-shadow: none; }
-        </style>
-    </head>
-    <body>
-        <h1>TUMBA YUMBA 🌴</h1>
-        
-        <div class="lang-bar">
-            <button class="btn btn-outline-light lang-btn" onclick="setLanguage('kk')">ҚАЗ</button>
-            <button class="btn btn-outline-light lang-btn" onclick="setLanguage('ru')">РУС</button>
-            <button class="btn btn-outline-light lang-btn" onclick="setLanguage('en')">ENG</button>
-        </div>
-
-        <div id="stats" class="stats-bar">Ходов сделано: 0</div>
-        <div id="status" class="active-player">Загрузка...</div>
-        
-        <div class="board">
-            <div id="store2" class="store">0</div>
-            <div class="row-pits">
-                <div id="row2" class="ai-row"></div>
-                <div id="row1"></div>
-            </div>
-            <div id="store1" class="store">0</div>
-        </div>
-        <br><button id="new-game-btn" class="btn btn-lg btn-outline-warning mt-5 px-5" onclick="initGame()">Новая игра</button>
-        
-        <script>
-            let state = {};
-            let moveCount = 0;
-            let currentLang = 'ru';
-
-            const translations = {
-                ru: {
-                    loading: "Загрузка...", your_turn: "Ваш ход 🟢", ai_turn: "Ходит Компьютер... 🤖",
-                    win: "🎉 Вы победили!", lose: "🤖 Победил Компьютер!", draw: "🤝 Ничья!",
-                    moves: "Ходов сделано: ", new_game: "Новая игра"
-                },
-                kk: {
-                    loading: "Жүктелуде...", your_turn: "Сіздің жүрісіңіз 🟢", ai_turn: "Компьютер жүріп жатыр... 🤖",
-                    win: "🎉 Сіз жеңдіңіз!", lose: "🤖 Компьютер жеңді!", draw: "🤝 Тең ойын!",
-                    moves: "Жасалған жүрістер: ", new_game: "Жаңа ойын"
-                },
-                en: {
-                    loading: "Loading...", your_turn: "Your turn 🟢", ai_turn: "Computer is thinking... 🤖",
-                    win: "🎉 You won!", lose: "🤖 Computer won!", draw: "🤝 Draw game!",
-                    moves: "Moves made: ", new_game: "New Game"
-                }
-            };
-
-            function setLanguage(lang) {
-                currentLang = lang;
-                render();
-            }
-
-            async function initGame() {
-                const res = await fetch('/new_game');
-                state = await res.json();
-                moveCount = 0;
-                render();
-            }
-
-            async function move(idx) {
-                if (state.current_player !== 1 || state.game_over) return;
-                const res = await fetch('/make_move?pit_index=' + idx, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(state)
-                });
-                if(res.ok) { 
-                    state = await res.json(); 
-                    moveCount++;
-                    render(); 
-                }
-            }
-
-            function render() {
-                if (!state.board) return;
-                const t = translations[currentLang];
-                
-                document.getElementById('stats').innerText = t.moves + moveCount;
-                document.getElementById('new-game-btn').innerText = t.new_game;
-                document.getElementById('store1').innerText = state.board[6];
-                document.getElementById('store2').innerText = state.board[13];
-                
-                let r1 = "", r2 = "";
-                for(let i=0; i<6; i++) {
-                    r1 += '<div class="pit" onclick="move(' + i + ')">' + state.board[i] + '</div>';
-                }
-                for(let i=12; i>=7; i--) {
-                    r2 += '<div class="pit">' + state.board[i] + '</div>';
-                }
-                document.getElementById('row1').innerHTML = r1;
-                document.getElementById('row2').innerHTML = r2;
-                
-                if(state.game_over) {
-                    if (state.winner === 1) document.getElementById('status').innerText = t.win;
+    html_template = (
+        "<!DOCTYPE html><html><head><title>Tumba Yumba</title>"
+        "<link href='https://jsdelivr.net' rel='stylesheet'>"
+        "<style>"
+        "body{background:#1a1a2e;color:white;text-align:center;font-family:sans-serif;padding-top:50px;}"
+        "h1{font-weight:700;color:#ff9f43;margin-bottom:10px;letter-spacing:2px;}"
+        ".lang-bar{margin-bottom:25px;}"
+        ".lang-btn{margin:0 5px;padding:5px 15px;border-radius:10px;font-weight:600;}"
+        ".board{background:#16213e;border:4px solid #0f3460;border-radius:25px;padding:30px;display:inline-block;box-shadow:0 15px 35px rgba(0,0,0,0.5);}"
+        ".pit{width:80px;height:80px;background:#0f3460;border:2px solid #ff9f43;border-radius:50%;display:inline-block;margin:15px;line-height:76px;font-size:26px;font-weight:bold;cursor:pointer;transition:all 0.2s ease-in-out;color:#fff;}"
+        ".pit:hover{background:#ff9f43;transform:scale(1.1);box-shadow:0 0 15px #ff9f43;}"
+        ".row-pits{display:inline-block;vertical-align:middle;}"
+        ".store{width:100px;height:210px;background:#ee5253;border:3px solid #ff9f43;border-radius:30px;display:inline-block;vertical-align:middle;line-height:200px;font-size:40px;font-weight:bold;margin:0 25px;}"
+        ".active-player{color:#10ac84;font-weight:600;font-size:26px;margin-bottom:25px;min-height:40px;text-transform:uppercase;}"
+        ".stats-bar{font-size:18px;margin-bottom:20px;color:#c7ecee;font-weight:500;}"
+        ".ai-row .pit{border-color:#10ac84;cursor:not-allowed;}"
+        ".ai-row .pit:hover{background:#0f3460;transform:none;box-shadow:none;}"
+        "</style></head><body>"
+        "<h1>TUMBA YUMBA \ud83c\udf34</h1>"
+        "<div class='lang-bar'>"
+        "<button class='btn btn-outline-light lang-btn' onclick=\"setLanguage('kk')\">\u049a\u0410\u0417</button>"
+        "<button class='btn btn-outline-light lang-btn' onclick=\"setLanguage('ru')\">\u0420\u0423\u0421</button>"
+        "<button class='btn btn-outline-light lang-btn' onclick=\"setLanguage('en')\">ENG</button>"
+        "</div>"
+        "<div id='stats' class='stats-bar'>\u0425\u043e\u0434\u043e\u0432 \u0441\u0434\u0435\u043b\u0430\u043d\u043e: 0</div>"
+        "<div id='status' class='active-player'>\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430...</div>"
+        "<div class='board'>"
+        "<div id='store2' class='store'>0</div>"
+        "<div class='row-pits'><div id='row2' class='ai-row'></div><div id='row1'></div></div>"
+        "<div id='store1' class='store'>0</div>"
+        "</div><br>"
+        "<button id='new-game-btn' class='btn btn-lg btn-outline-warning mt-5 px-5' onclick='initGame()'>\u0419\u0430\u04a3\u0430 \u043e\u0439\u044b\u043d</button>"
+        "<script>"
+        "let state={};let moveCount=0;let currentLang='ru';"
+        "const translations={"
+        "ru:{loading:'\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430...',your_turn:'\u0412\u0430\u0448 \u0445\u043e\u0434 \ud83d\udfe2',ai_turn:'\u0425\u043e\u0434\u0438\u0442 \u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440... \ud83e\udd16',win:'\ud83c\udf89 \u0412\u044b \u043f\u043e\u0431\u0435\u0434\u0438\u043b\u0438!',lose:'\ud83e\udd16 \u041f\u043e\u0431\u0435\u0434\u0438\u043b \u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440!',draw:'\ud83e\udd1d \u041d\u0438\u0447\u044c\u044f!',moves:'\u0425\u043e\u0434\u043e\u0432 \u0441\u0434\u0435\u043b\u0430\u043d\u043e: ',new_game:'\u041d\u043e\u0432\u0430\u044f \u043e\u0439\u044b\u043d'},"
+        "kk:{loading:'\u0416\u04af\u043a\u0442\u0435\u043b\u04af\u0434\u0435...',your_turn:'\u0421\u0456\u0437\u0434\u0456\u04block\u0456\u04block \u0436\u04af\u0440\u0456\u0441\u0456\u04block\u0456\u04block \ud83d\udfe2',ai_turn:'\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440 \u0436\u04af\u0440\u0456\u043f \u0436\u0430\u0442\u044b\u0440... \ud83e\udd16',win:'\ud83c\udf89 \u0421\u0456\u0437 \u0436\u0435\u04 Kazakh\u0456\u0434\u0456\u04block\u0456\u04block!',lose:'\ud83e\udd16 \u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440 \u0436\u0435\u04blocks\u0434\u0456!',draw:'\ud83e\udd1d \u0422\u0435\u04block \u043e\u0439\u044b\u043d!',moves:'\u0416\u0430\u0441\u0430\u043b\u0433\u0430\u043d \u0436\u04af\u0440\u0456\u0441\u0442\u0435\u0440: ',new_game:'\u0416\u0430\u04a3\u0430 \u043e\u0439\u044b\u043d'},"
+        "en:{loading:'Loading...',your_turn:'Your turn \ud83d\udfe2',ai_turn:'Computer thinking... \ud83e\udd16',win:'\ud83c\udf89 You won!',lose:'\ud83e\udd16 Computer won!',draw:'\ud83e\udd1d Draw!',moves:'Moves made: ',new_game:'New Game'}"
+        "};"
+        "function setLanguage(l){currentLang=l;render();}"
+        "async function initGame(){const r=await fetch('/new_game');state=await r.json();moveCount=0;render();}"
+        "async function move(i){if(state.current_player!==1||state.game_over)return;"
+        "const r=await fetch('/make_move?pit_index='+i,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});"
+        "if(r.ok){state=await r.json();moveCount++;render();}}"
+        "function render(){if(!state.board)return;const t=translations[currentLang];"
+        "document.getElementById('stats').innerText=t.moves+moveCount;"
+        "document.getElementById('new-game-btn').innerText=t.new_game;"
+        "document.getElementById('store1').innerText=state.board[6];"
+        "document.getElementById('store2').innerText=state.board[13];"
+        "let r1='',r2='';"
+        "for(let i=0;i<6;i++){r1+='<div class=\"pit\" onclick=\"move('+i+')\">'+state.board[i]+'</div>';}"
+        "for(let i=12;i>=7;i--){r2+='<div class=\"pit\">'+state.board[i]+'</div>';}"
+        "document.getElementById('row1').innerHTML=r1;document.getElementById('row2').innerHTML=r2;"
+        "if(state.game_over){if(state.winner===1)document.getElementById('status').innerText=t.win;"
+        "else if(state.winner===2)document.getElementById('status').innerText=t.lose;"
