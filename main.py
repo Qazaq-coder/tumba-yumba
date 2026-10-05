@@ -119,8 +119,8 @@ def make_move(state: GameState, pit_index: int):
 @app.get("/", response_class=HTMLResponse)
 def get_gui():
     import urllib.request
-    # Подгружаем стабильный веб-интерфейс напрямую из облачного CDN хранилища
-    url = "https://pastebin.com"
+    # Теперь подгружаем веб-интерфейс напрямую из вашего личного стабильного репозитория на GitHub Pages
+    url = "https://github.io"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     html_content = urllib.request.urlopen(req).read().decode('utf-8')
     return HTMLResponse(content=html_content)
