@@ -1,1 +1,3 @@
-from fastapi import FastAPI, HTTPException
+def init_board() -> List[int]:
+    # Турецкая мангала: 6 лунок по 4 камня, две казны изначально пустые (0)
+    return
