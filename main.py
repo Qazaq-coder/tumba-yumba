@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import random
-import os
 
 app = FastAPI(title="Tumba Yumba Engine")
 
@@ -70,8 +69,6 @@ def execute_move(board: list, player: int, pit_index: int):
     else:
         next_player = player
 
-    game_over = False
-    winner = None
     if sum(board[0:6]) == 0 or sum(board[7:13]) == 0:
         board[6] += sum(board[0:6])
         board[13] += sum(board[7:13])
@@ -81,8 +78,9 @@ def execute_move(board: list, player: int, pit_index: int):
         if board[6] > board[13]: winner = 1
         elif board[13] > board[6]: winner = 2
         else: winner = 0
+        return board, next_player, game_over, winner
 
-    return board, next_player, game_over, winner
+    return board, next_player, False, None
 
 @app.post("/make_move", response_model=GameState)
 def make_move(state: GameState, pit_index: int):
