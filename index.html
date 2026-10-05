@@ -94,15 +94,15 @@
             
             document.getElementById('stats').innerText = t.moves + moveCount;
             document.getElementById('new-game-btn').innerText = t.new_game;
-            document.getElementById('store1').innerText = state.board[6];
-            document.getElementById('store2').innerText = state.board[13];
+            document.getElementById('store1').innerText = state.board.at(6);
+            document.getElementById('store2').innerText = state.board.at(13);
             
             let r1 = "", r2 = "";
             for(let i=0; i<6; i++) {
-                r1 += '<div class="pit" onclick="move(' + i + ')">' + state.board[i] + '</div>';
+                r1 += '<div class="pit" onclick="move(' + i + ')">' + state.board.at(i) + '</div>';
             }
             for(let i=12; i>=7; i--) {
-                r2 += '<div class="pit">' + state.board[i] + '</div>';
+                r2 += '<div class="pit">' + state.board.at(i) + '</div>';
             }
             document.getElementById('row1').innerHTML = r1;
             document.getElementById('row2').innerHTML = r2;
