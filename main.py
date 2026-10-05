@@ -12,8 +12,9 @@ class GameState(BaseModel):
     winner: int = None
 
 def init_board():
-    # Стартовая расстановка турецкой Мангалы: 6 лунок игрока по 4, казна (0), 6 лунок ИИ по 4, казна (0)
-    return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]
+    # Создаем стартовое поле турецкой Мангалы без использования квадратных скобок:
+    # 6 лунок игрока по 4 камня + 1 пустая казна (0) + 6 лунок ИИ по 4 камня + 1 пустая казна (0)
+    return list((4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0))
 
 @app.get("/new_game", response_model=GameState)
 def new_game():
@@ -169,11 +170,11 @@ def get_gui():
             if(!state.board)return;const t=translations[currentLang];
             document.getElementById('stats').innerText=t.moves+moveCount;
             document.getElementById('new-game-btn').innerText=t.new_game;
-            document.getElementById('store1').innerText=state.board[6];
-            document.getElementById('store2').innerText=state.board[13];
+            document.getElementById('store1').innerText=state.board.at(6);
+            document.getElementById('store2').innerText=state.board.at(13);
             let r1='',r2='';
-            for(let i=0;i<6;i++){r1+='<div class="pit" onclick="move('+i+')">'+state.board[i]+'</div>';}
-            for(let i=12;i>=7;i--){r2+='<div class="pit">'+state.board[i]+'</div>';}
+            for(let i=0;i<6;i++){r1+='<div class="pit" onclick="move('+i+')">'+state.board.at(i)+'</div>';}
+            for(let i=12;i>=7;i--){r2+='<div class="pit">'+state.board.at(i)+'</div>';}
             document.getElementById('row1').innerHTML=r1;document.getElementById('row2').innerHTML=r2;
             if(state.game_over){
                 if(state.winner===1)document.getElementById('status').innerText=t.win;
