@@ -12,6 +12,7 @@ class GameState(BaseModel):
     winner: int = None
 
 def init_board():
+    # Стартовая расстановка: 6 лунок игрока по 4, казна (0), 6 лунок ИИ по 4, казна (0)
     return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]
 
 @app.get("/new_game", response_model=GameState)
@@ -69,6 +70,8 @@ def execute_move(board: list, player: int, pit_index: int):
     else:
         next_player = player
 
+    game_over = False
+    winner = None
     if sum(board[0:6]) == 0 or sum(board[7:13]) == 0:
         board[6] += sum(board[0:6])
         board[13] += sum(board[7:13])
@@ -78,9 +81,8 @@ def execute_move(board: list, player: int, pit_index: int):
         if board[6] > board[13]: winner = 1
         elif board[13] > board[6]: winner = 2
         else: winner = 0
-        return board, next_player, game_over, winner
 
-    return board, next_player, False, None
+    return board, next_player, game_over, winner
 
 @app.post("/make_move", response_model=GameState)
 def make_move(state: GameState, pit_index: int):
@@ -88,9 +90,9 @@ def make_move(state: GameState, pit_index: int):
     player = state.current_player
     
     if player == 1 and not (0 <= pit_index <= 5):
-        raise HTTPException(status_code=400, detail="Error")
+        raise HTTPException(status_code=400, detail="Ход только из лунок 0-5")
     if board[pit_index] == 0:
-        raise HTTPException(status_code=400, detail="Empty")
+        raise HTTPException(status_code=400, detail="Лунка пуста")
 
     board, next_player, game_over, winner = execute_move(board, player, pit_index)
     
